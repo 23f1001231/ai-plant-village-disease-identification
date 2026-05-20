@@ -45,11 +45,14 @@ import VoiceInput from '@/components/VoiceInput.vue';
         <div class="step-title">Disease identification</div>
         <div class="step-desc">Deep learning model classifies disease with Grad-CAM heatmap overlay showing affected regions</div>
       </div>
-      <div class="step-card">
-        <div class="step-num">STEP 3 — TREATMENT</div>
-        <div class="step-title">Hyperlocal guidance</div>
-        <div class="step-desc">Adaptive Q&amp;A determines local conditions, soil type, crop stage — then recommends actionable steps</div>
-      </div>
+      <router-link to="/treatment" class="step-card group cursor-pointer text-inherit hover:no-underline">
+        <div class="step-num font-bold">STEP 3 — TREATMENT</div>
+        <div class="step-title flex items-center justify-between">
+          <span>Hyperlocal guidance</span>
+          <i class="ti ti-arrow-right text-xs text-green-400 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-1" aria-hidden="true"></i>
+        </div>
+        <div class="step-desc text-slate-400">Adaptive Q&amp;A determines local conditions, soil type, crop stage — then recommends actionable steps</div>
+      </router-link>
     </div>
   </main>
 </template>

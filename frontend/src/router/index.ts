@@ -7,6 +7,7 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'home', component: HomeView },
     { path: '/result', name: 'result', component: () => import('@/views/DiagnosisResultView.vue') },
+    { path: '/treatment', name: 'treatment', component: () => import('@/views/HyperlocalTreatmentAdvisorView.vue') },
     { path: '/about', name: 'about', component: AboutView },
   ],
 })

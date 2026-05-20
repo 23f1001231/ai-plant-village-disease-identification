@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useDiagnosisStore } from '@/stores/diagnosis'
 import { useLanguageStore } from '@/stores/language'
 
+const router = useRouter()
 const diagnosisStore = useDiagnosisStore()
 const languageStore = useLanguageStore()
 
@@ -114,6 +116,16 @@ onBeforeUnmount(() => {
         {{ diagnosisStore.currentDisease.severity }}
       </span>
     </div>
+
+    <!-- Get Treatment Plan Button -->
+    <button 
+      @click="router.push('/treatment')"
+      type="button"
+      class="flex items-center justify-center gap-2 w-full py-3 mb-5 bg-green-600 hover:bg-green-500 text-white border-0 font-bold rounded-2xl text-xs transition-all shadow-md shadow-green-900/10 cursor-pointer focus:outline-none select-none"
+    >
+      <i class="ti ti-sparkles text-xs" aria-hidden="true"></i>
+      Consult Treatment Advisor
+    </button>
 
     <!-- Audio Player widget -->
     <div class="audio-bar flex items-center gap-3.5 p-3.5 bg-[#0d1527]/90 border border-green-950/40 rounded-2xl relative overflow-hidden group">
