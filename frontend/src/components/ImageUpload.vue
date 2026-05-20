@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import { useDiagnosisStore } from '@/stores/diagnosis'
 import PhotoUpIcon from './icons/PhotoUpIcon.vue'
 import UploadIcon from './icons/UploadIcon.vue'
+
+const router = useRouter()
+const diagnosisStore = useDiagnosisStore()
 
 // Allowed file settings based on the image
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -79,6 +84,13 @@ const clearImage = () => {
   }
   if (fileInput.value) {
     fileInput.value.value = ''
+  }
+}
+
+const analyzeLeaf = () => {
+  if (previewUrl.value) {
+    diagnosisStore.setUploadedImage(previewUrl.value)
+    router.push('/result')
   }
 }
 
@@ -211,6 +223,7 @@ onBeforeUnmount(() => {
           </button>
           <button
             type="button"
+            @click="analyzeLeaf"
             class="flex-1 py-2.5 px-4 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-2xl text-sm transition-all shadow-md shadow-green-900/20 cursor-pointer border-0"
           >
             Analyze Leaf
