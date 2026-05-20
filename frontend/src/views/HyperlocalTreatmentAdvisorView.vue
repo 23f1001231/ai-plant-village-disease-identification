@@ -83,7 +83,7 @@ onBeforeUnmount(() => {
       <!-- Right Column: Treatment Plan & Audio Card (takes 7 spans on desktop) -->
       <div class="md:col-span-7 col-span-1 flex flex-col gap-5">
         <AdvisorTreatmentPlanCard />
-        <AdvisorAudioReportCard @download="handleDownloadPdf" />
+        <AdvisorAudioReportCard @download="handleDownloadPdf" class="no-print" />
       </div>
     </main>
 
@@ -107,27 +107,260 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
-<style scoped>
+<style>
 @media print {
-  /* Print Layout Customization */
-  .topbar, .back-btn, button, .voice-mini, .audio-compact {
+  /* Hide elements that shouldn't be printed */
+  .no-print, 
+  nav,
+  .back-btn, 
+  .voice-mini, 
+  .proceed-btn {
     display: none !important;
   }
+
+  /* Reset app container */
   .app {
-    background: white !important;
-    color: black !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    min-height: auto !important;
+    padding: 0 !important;
   }
-  .card {
-    border: 1px solid #ccc !important;
-    background: transparent !important;
+
+  /* Print-optimized header */
+  .topbar {
+    background: #ffffff !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+    padding: 16px 0 !important;
+    margin: 0 auto 24px auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    position: static !important; /* Remove sticky position */
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    height: auto !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Specific typography overrides for header titles */
+  .topbar h1 {
+    color: #0f172a !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+  }
+
+  .topbar p {
+    color: #475569 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+  }
+
+  /* Header Location Badge */
+  .topbar > div:last-child {
+    background: #e1f5ee !important;
+    border: 1px solid #9fe1cb !important;
+    color: #0f6e56 !important;
+    padding: 6px 14px !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    border-radius: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
     box-shadow: none !important;
   }
+
+  .topbar > div:last-child i {
+    color: #0f6e56 !important;
+    font-size: 12px !important;
+  }
+
+  /* Core layout grid adjustment */
   .main {
     max-width: 100% !important;
     padding: 0 !important;
+    margin: 0 auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    gap: 24px !important;
+  }
+
+  .main > div:first-child {
+    grid-column: span 5 / span 5 !important;
+  }
+
+  .main > div:last-child {
+    grid-column: span 7 / span 7 !important;
+  }
+
+  /* Cards styling */
+  .card {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+    padding: 16px 18px !important;
+    page-break-inside: avoid;
+  }
+
+  .card-label {
+    color: #475569 !important;
+    font-weight: 700 !important;
+    font-size: 9px !important;
+    letter-spacing: 0.08em !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Override dark-theme Tailwind text colors */
+  .text-white,
+  .text-slate-100,
+  .text-slate-200 {
+    color: #0f172a !important;
+  }
+
+  .text-slate-300,
+  .text-slate-400,
+  .text-slate-500 {
+    color: #475569 !important;
+  }
+
+  /* Q&A options printing */
+  .q-item {
+    margin-bottom: 14px !important;
+  }
+
+  .q-text {
+    color: #0f172a !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+  }
+  
+  .q-num {
+    background: #e2e8f0 !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 800 !important;
+  }
+
+  .opts {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding-left: 28px !important;
+  }
+
+  .opt {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+    font-weight: 700 !important;
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+    border-radius: 20px !important;
+    cursor: default !important;
+  }
+
+  /* Override option buttons when selected (using the dark-mode class signature) */
+  .opt.bg-green-600 {
+    background: #e1f5ee !important;
+    border-color: #9fe1cb !important;
+    color: #0f6e56 !important;
+    font-weight: 800 !important;
+  }
+
+  /* Treatment plan styles */
+  .treat-section {
+    margin-bottom: 16px !important;
+  }
+
+  .treat-title {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+  }
+
+  .treat-icon {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+  }
+
+  .treat-icon i {
+    color: #475569 !important;
+    font-size: 14px !important;
+  }
+
+  /* Immediate Alert icons */
+  .treat-title i[style*="color: rgb(251"], 
+  .treat-title i[style*="color: #ef4444"] {
+    color: #b91c1c !important;
+  }
+
+  .step-list {
     display: flex !important;
     flex-direction: column !important;
-    gap: 1.5rem !important;
+    gap: 8px !important;
+  }
+
+  .step-row {
+    display: flex !important;
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+
+  .step-dot {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50% !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+  }
+
+  .step-head {
+    color: #0f172a !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+  }
+
+  .step-body {
+    color: #334155 !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Recommended product chips styling */
+  .product-chip {
+    background: #e1f5ee !important;
+    border: 1px solid #9fe1cb !important;
+    color: #085041 !important;
+    padding: 3px 8px !important;
+    border-radius: 20px !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin: 2px !important;
+  }
+
+  .divider {
+    border: none !important;
+    border-top: 1px solid #cbd5e1 !important;
+    margin: 14px 0 !important;
+  }
+
+  /* Force browsers to print background colors and border outlines */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 </style>

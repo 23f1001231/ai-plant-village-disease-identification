@@ -147,7 +147,7 @@ onBeforeUnmount(() => {
 <style scoped>
 @media print {
   /* Print Optimization Styles */
-  .topbar, .back-btn, button, .toggle-row, .audio-bar {
+  nav, .topbar, .back-btn, button, .toggle-row, .audio-bar {
     display: none !important;
   }
   .app {
