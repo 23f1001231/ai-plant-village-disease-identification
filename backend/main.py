@@ -15,9 +15,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Custom modules
-from transformer.classifier import DiseaseClassifier
-from transformer.gradcam import GradCAM
-from transformer.validator import validate_leaf
+from vision.classifier import DiseaseClassifier
+from vision.gradcam import GradCAM
+from vision.validator import validate_leaf
 from rag.ingest import run_ingestion
 from rag.advisor import TreatmentAdvisor
 from stt_tts.stt_service import SpeechToTextService

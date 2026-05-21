@@ -29,6 +29,60 @@ _TRANSFORM = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
+def _map_hf_to_torchvision(hf_state_dict: dict) -> dict:
+    """Translates a Hugging Face ViT state dict to torchvision ViT format on the fly."""
+    tv_state_dict = {}
+    
+    # 1. Patch embeddings (projection conv)
+    tv_state_dict['conv_proj.weight'] = hf_state_dict['vit.embeddings.patch_embeddings.projection.weight']
+    tv_state_dict['conv_proj.bias'] = hf_state_dict['vit.embeddings.patch_embeddings.projection.bias']
+    
+    # 2. Class token and position embeddings
+    tv_state_dict['class_token'] = hf_state_dict['vit.embeddings.cls_token']
+    tv_state_dict['encoder.pos_embedding'] = hf_state_dict['vit.embeddings.position_embeddings']
+    
+    # 3. Encoder layers
+    for i in range(12):
+        hf_prefix = f'vit.encoder.layer.{i}.'
+        tv_prefix = f'encoder.layers.encoder_layer_{i}.'
+        
+        # Self-attention query, key, value concatenation
+        q_w = hf_state_dict[hf_prefix + 'attention.attention.query.weight']
+        k_w = hf_state_dict[hf_prefix + 'attention.attention.key.weight']
+        v_w = hf_state_dict[hf_prefix + 'attention.attention.value.weight']
+        tv_state_dict[tv_prefix + 'self_attention.in_proj_weight'] = torch.cat([q_w, k_w, v_w], dim=0)
+        
+        q_b = hf_state_dict[hf_prefix + 'attention.attention.query.bias']
+        k_b = hf_state_dict[hf_prefix + 'attention.attention.key.bias']
+        v_b = hf_state_dict[hf_prefix + 'attention.attention.value.bias']
+        tv_state_dict[tv_prefix + 'self_attention.in_proj_bias'] = torch.cat([q_b, k_b, v_b], dim=0)
+        
+        # Self-attention output dense layer
+        tv_state_dict[tv_prefix + 'self_attention.out_proj.weight'] = hf_state_dict[hf_prefix + 'attention.output.dense.weight']
+        tv_state_dict[tv_prefix + 'self_attention.out_proj.bias'] = hf_state_dict[hf_prefix + 'attention.output.dense.bias']
+        
+        # LayerNorms
+        tv_state_dict[tv_prefix + 'ln_1.weight'] = hf_state_dict[hf_prefix + 'layernorm_before.weight']
+        tv_state_dict[tv_prefix + 'ln_1.bias'] = hf_state_dict[hf_prefix + 'layernorm_before.bias']
+        tv_state_dict[tv_prefix + 'ln_2.weight'] = hf_state_dict[hf_prefix + 'layernorm_after.weight']
+        tv_state_dict[tv_prefix + 'ln_2.bias'] = hf_state_dict[hf_prefix + 'layernorm_after.bias']
+        
+        # MLP (dense 1 and dense 2)
+        tv_state_dict[tv_prefix + 'mlp.linear_1.weight'] = hf_state_dict[hf_prefix + 'intermediate.dense.weight']
+        tv_state_dict[tv_prefix + 'mlp.linear_1.bias'] = hf_state_dict[hf_prefix + 'intermediate.dense.bias']
+        tv_state_dict[tv_prefix + 'mlp.linear_2.weight'] = hf_state_dict[hf_prefix + 'output.dense.weight']
+        tv_state_dict[tv_prefix + 'mlp.linear_2.bias'] = hf_state_dict[hf_prefix + 'output.dense.bias']
+        
+    # 4. Final layernorm
+    tv_state_dict['encoder.ln.weight'] = hf_state_dict['vit.layernorm.weight']
+    tv_state_dict['encoder.ln.bias'] = hf_state_dict['vit.layernorm.bias']
+    
+    # 5. Classifier head
+    tv_state_dict['heads.head.weight'] = hf_state_dict['classifier.weight']
+    tv_state_dict['heads.head.bias'] = hf_state_dict['classifier.bias']
+    
+    return tv_state_dict
+
 class DiseaseClassifier:
     """Loads a pre-trained PyTorch model (EfficientNet/ViT) and does top-3 inference."""
     def __init__(self, checkpoint_path: str):
@@ -42,7 +96,12 @@ class DiseaseClassifier:
         
         # Recreate the model structure
         self.model = self._create_empty_model(self.model_name, self.num_classes)
-        self.model.load_state_dict(checkpoint["model_state"])
+        
+        state_dict = checkpoint["model_state"]
+        if self.model_name == "vit_huggingface":
+            state_dict = _map_hf_to_torchvision(state_dict)
+            
+        self.model.load_state_dict(state_dict)
         self.model.to(self.device)
         self.model.eval()
 
@@ -52,15 +111,10 @@ class DiseaseClassifier:
             model = models.efficientnet_v2_s(weights=None)
             num_features = model.classifier[1].in_features
             model.classifier[1] = nn.Linear(num_features, num_classes)
-        elif model_name == "vit_b16":
+        elif model_name == "vit_b16" or model_name == "vit_huggingface":
             model = models.vit_b_16(weights=None)
             num_features = model.heads.head.in_features
             model.heads.head = nn.Linear(num_features, num_classes)
-        elif model_name == "vit_huggingface":
-            from transformers import ViTForImageClassification, ViTConfig
-            config = ViTConfig.from_pretrained("google/vit-base-patch16-224", num_labels=num_classes)
-            model = ViTForImageClassification(config)
-            return model
         else:
             raise ValueError(f"Unknown architecture: {model_name}")
         return model

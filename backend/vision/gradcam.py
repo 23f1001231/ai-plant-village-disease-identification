@@ -14,10 +14,8 @@ class GradCAM:
         # Determine the target layer to hook based on architecture
         if classifier.model_name.startswith("efficientnet"):
             self.target_layer = self.model.features
-        elif classifier.model_name == "vit_b16":
+        elif classifier.model_name in ["vit_b16", "vit_huggingface"]:
             self.target_layer = self.model.encoder.layers[-1]
-        elif classifier.model_name == "vit_huggingface":
-            self.target_layer = self.model.vit.encoder.layer[-1]
         else:
             self.target_layer = None
             
