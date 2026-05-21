@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useLanguageStore } from './language'
 
 export interface TreatmentStep {
   id: number
@@ -18,14 +19,16 @@ export interface TreatmentGroup {
 }
 
 export const useTreatmentStore = defineStore('treatment', () => {
-  // Active state selections
+  const languageStore = useLanguageStore()
+
+  // Active state selections (internal untranslated keys)
   const growthStage = ref('Seedling')
   const severity = ref('~25% plant')
   const irrigation = ref('Drip')
   const fungicides = ref('Organic only')
   const weather = ref('Warm & humid')
 
-  // Available options
+  // Available options (internal untranslated keys)
   const growthStages = ['Seedling', 'Vegetative', 'Flowering', 'Fruiting']
   const severities = ['Few leaves', '~25% plant', '50%+ plant', 'Whole field']
   const irrigations = ['Drip', 'Flood', 'Sprinkler', 'Rainfed']
@@ -34,9 +37,9 @@ export const useTreatmentStore = defineStore('treatment', () => {
 
   // Computed urgency badge
   const urgencyText = computed(() => {
-    if (severity.value === 'Few leaves') return 'Mild Alert'
-    if (severity.value === '~25% plant') return 'Do today'
-    return 'Immediate Alert'
+    if (severity.value === 'Few leaves') return languageStore.t('mild_alert')
+    if (severity.value === '~25% plant') return languageStore.t('do_today')
+    return languageStore.t('immediate_alert')
   })
 
   const urgencyBg = computed(() => {
@@ -59,14 +62,14 @@ export const useTreatmentStore = defineStore('treatment', () => {
     if (severity.value === 'Few leaves') {
       immediateSteps.push({
         id: 1,
-        title: 'Prune spotting leaves',
-        description: 'Carefully pinch off and destroy leaves showing initial concentric ring lesions. Clean tools with rubbing alcohol between cuts.'
+        title: languageStore.t('step_prune'),
+        description: languageStore.t('desc_prune')
       })
     } else {
       immediateSteps.push({
         id: 1,
-        title: 'Remove infected leaves',
-        description: 'Prune all visibly infected leaves. Bag and remove from field immediately — do not compost or leave on soil.'
+        title: languageStore.t('step_remove'),
+        description: languageStore.t('desc_remove')
       })
     }
 
@@ -74,23 +77,23 @@ export const useTreatmentStore = defineStore('treatment', () => {
     if (fungicides.value === 'Organic only') {
       immediateSteps.push({
         id: 2,
-        title: 'Copper-based organic spray',
-        description: 'Apply copper oxychloride (3g/L) — highly effective and approved for organic cultivation. Spray in early morning hours.',
-        products: ['Bordeaux mixture', 'Copper oxychloride']
+        title: languageStore.t('step_copper'),
+        description: languageStore.t('desc_copper'),
+        products: [languageStore.t('prod_bordeaux'), languageStore.t('prod_oxychloride')]
       })
     } else if (fungicides.value === 'Yes, chemical') {
       immediateSteps.push({
         id: 2,
-        title: 'Targeted synthetic fungicide',
-        description: 'Apply Mancozeb or Chlorothalonil at recommended rates to protect new leaf growth and stop spore germinations.',
-        products: ['Mancozeb 75% WP', 'Chlorothalonil 75% WP']
+        title: languageStore.t('step_synthetic'),
+        description: languageStore.t('desc_synthetic'),
+        products: [languageStore.t('prod_mancozeb'), languageStore.t('prod_chlorothalonil')]
       })
     } else {
       immediateSteps.push({
         id: 2,
-        title: 'Natural systemic sprays',
-        description: 'Apply cold-pressed Neem Oil solution (0.5% with organic emulsifier) or potassium bicarbonate spray to inhibit fungal expansion.',
-        products: ['Neem oil extract', 'Potassium bicarbonate']
+        title: languageStore.t('step_natural'),
+        description: languageStore.t('desc_natural'),
+        products: [languageStore.t('prod_neem'), languageStore.t('prod_bicarbonate')]
       })
     }
 
@@ -99,20 +102,20 @@ export const useTreatmentStore = defineStore('treatment', () => {
     if (irrigation.value === 'Drip') {
       weekSteps.push({
         id: 3,
-        title: 'Adjust drip irrigation timing',
-        description: 'Switch to morning watering only. Reduce leaf wetness duration to below 4 hours/day to prevent spores from germinating.'
+        title: languageStore.t('step_drip'),
+        description: languageStore.t('desc_drip')
       })
     } else if (irrigation.value === 'Flood') {
       weekSteps.push({
         id: 3,
-        title: 'Manage irrigation drainage',
-        description: 'Avoid standing surface water. Let field dry between applications and avoid mud pooling to decrease local relative humidity.'
+        title: languageStore.t('step_flood'),
+        description: languageStore.t('desc_flood')
       })
     } else {
       weekSteps.push({
         id: 3,
-        title: 'Avoid overhead sprinkling',
-        description: 'Water at soil level if possible. Overhead watering splashes spores onto healthy leaves. Switch to drip/basin if available.'
+        title: languageStore.t('step_sprinkler'),
+        description: languageStore.t('desc_sprinkler')
       })
     }
 
@@ -120,14 +123,14 @@ export const useTreatmentStore = defineStore('treatment', () => {
     if (growthStage.value === 'Seedling') {
       weekSteps.push({
         id: 4,
-        title: 'Optimize seedling spacing',
-        description: 'Thin seedlings or space rows to at least 45cm apart to facilitate early canopy aeration and sun exposure.'
+        title: languageStore.t('step_seedling'),
+        description: languageStore.t('desc_seedling')
       })
     } else {
       weekSteps.push({
         id: 4,
-        title: 'Improve canopy air circulation',
-        description: 'Space mature branches; selectively prune lower leaves touching the soil to eliminate spore splash vectors.'
+        title: languageStore.t('step_canopy'),
+        description: languageStore.t('desc_canopy')
       })
     }
 
@@ -135,14 +138,14 @@ export const useTreatmentStore = defineStore('treatment', () => {
     const preventionSteps: TreatmentStep[] = [
       {
         id: 5,
-        title: 'Crop rotation next season',
-        description: 'Avoid planting solanaceous crops (tomatoes, potatoes, eggplants) in this field for at least 2 seasons to break the Alternaria lifecycle.'
+        title: languageStore.t('step_rotation'),
+        description: languageStore.t('desc_rotation')
       }
     ]
 
     return [
       {
-        name: 'Immediate actions',
+        name: languageStore.t('sec_immediate'),
         icon: 'ti-urgent',
         bg: '#FAECE7',
         color: '#993C1D',
@@ -150,14 +153,14 @@ export const useTreatmentStore = defineStore('treatment', () => {
         steps: immediateSteps
       },
       {
-        name: 'This week',
+        name: languageStore.t('sec_week'),
         icon: 'ti-calendar',
         bg: '#FAEEDA',
         color: '#854F0B',
         steps: weekSteps
       },
       {
-        name: 'Prevention going forward',
+        name: languageStore.t('sec_prevention'),
         icon: 'ti-shield-check',
         bg: '#EAF3DE',
         color: '#3B6D11',
@@ -183,3 +186,4 @@ export const useTreatmentStore = defineStore('treatment', () => {
     treatmentPlan
   }
 })
+

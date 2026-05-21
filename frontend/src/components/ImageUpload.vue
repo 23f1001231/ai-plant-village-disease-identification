@@ -2,11 +2,13 @@
 import { ref, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDiagnosisStore } from '@/stores/diagnosis'
+import { useLanguageStore } from '@/stores/language'
 import PhotoUpIcon from './icons/PhotoUpIcon.vue'
 import UploadIcon from './icons/UploadIcon.vue'
 
 const router = useRouter()
 const diagnosisStore = useDiagnosisStore()
+const languageStore = useLanguageStore()
 
 // Allowed file settings based on the image
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -58,12 +60,12 @@ const processFile = (file: File) => {
   errorMessage.value = null
   
   if (!ALLOWED_TYPES.includes(file.type)) {
-    errorMessage.value = 'Unsupported file format. Please upload JPEG, PNG, or WEBP.'
+    errorMessage.value = languageStore.t('unsupported_format')
     return
   }
   
   if (file.size > MAX_FILE_SIZE_BYTES) {
-    errorMessage.value = `File is too large. Max size is ${MAX_FILE_SIZE_MB}MB.`
+    errorMessage.value = languageStore.t('file_too_large')
     return
   }
   
@@ -148,10 +150,10 @@ onBeforeUnmount(() => {
         <!-- Info/Instructions -->
         <div class="space-y-1">
           <h3 class="upload-title text-base font-bold text-white">
-            Drop your leaf image here
+            {{ languageStore.t('drop_leaf_here') }}
           </h3>
           <p class="upload-sub text-sm text-slate-400 font-medium">
-            or click to browse from your device
+            {{ languageStore.t('or_click_browse') }}
           </p>
         </div>
 
@@ -177,7 +179,7 @@ onBeforeUnmount(() => {
           class="btn-upload flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-2xl shadow-md shadow-green-900/20 transition-all duration-200 cursor-pointer text-sm border-0"
         >
           <UploadIcon class="w-4 h-4 text-white" />
-          Choose Image
+          {{ languageStore.t('choose_image') }}
         </button>
       </div>
 
@@ -219,18 +221,19 @@ onBeforeUnmount(() => {
             @click="clearImage"
             class="flex-1 py-2.5 px-4 bg-[#0d1527] hover:bg-green-950/20 text-green-400 font-semibold rounded-2xl text-sm transition-all cursor-pointer border border-green-900/30"
           >
-            Change
+            {{ languageStore.t('change') }}
           </button>
           <button
             type="button"
             @click="analyzeLeaf"
             class="flex-1 py-2.5 px-4 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-2xl text-sm transition-all shadow-md shadow-green-900/20 cursor-pointer border-0"
           >
-            Analyze Leaf
+            {{ languageStore.t('analyze_leaf') }}
           </button>
         </div>
       </div>
     </div>
+
 
     <!-- Error Message Panel -->
     <transition

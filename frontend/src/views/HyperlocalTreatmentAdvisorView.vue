@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
+import { useLanguageStore } from '@/stores/language'
 import AdvisorQaCard from '@/components/AdvisorQaCard.vue'
 import AdvisorTreatmentPlanCard from '@/components/AdvisorTreatmentPlanCard.vue'
 import AdvisorAudioReportCard from '@/components/AdvisorAudioReportCard.vue'
 
 const router = useRouter()
+const languageStore = useLanguageStore()
 
 // Reactive Toast State
 const toastMessage = ref<string | null>(null)
@@ -25,11 +27,11 @@ const goBack = () => {
 }
 
 const handleGeneratePlan = () => {
-  showToast('Analyzing conditions... Plan updated successfully!')
+  showToast(languageStore.t('analyzing_conditions'))
 }
 
 const handleDownloadPdf = () => {
-  showToast('Preparing PDF... Opening print layout.')
+  showToast(languageStore.t('preparing_pdf'))
   setTimeout(() => {
     window.print()
   }, 400)
@@ -58,10 +60,10 @@ onBeforeUnmount(() => {
         <!-- Titles -->
         <div>
           <h1 class="logo-text text-sm font-extrabold text-white tracking-wide uppercase leading-tight">
-            Hyperlocal Treatment Advisor
+            {{ languageStore.t('hyperlocal_advisor') }}
           </h1>
           <p class="text-[10px] text-slate-500 font-bold uppercase mt-0.5 tracking-wider">
-            Early Blight · Tomato
+            {{ languageStore.t('early_blight') }} · {{ languageStore.t('tomato_scientific') }}
           </p>
         </div>
       </div>
@@ -69,9 +71,9 @@ onBeforeUnmount(() => {
       <!-- Location Badge -->
       <div class="flex items-center gap-1.5 px-3 py-1.5 bg-green-950/20 border border-green-900/35 rounded-full text-xs text-green-400 font-extrabold shadow-2xs">
         <i class="ti ti-map-pin text-xs text-green-450" aria-hidden="true"></i>
-        Maharashtra · Kharif Season
+        {{ languageStore.t('maharashtra_season') }}
       </div>
-    </div>
+    </div>v>
 
     <!-- Main Content layout Grid -->
     <main class="main w-full max-w-4xl mx-auto p-6 md:p-8 grid grid-cols-1 md:grid-cols-12 gap-5">

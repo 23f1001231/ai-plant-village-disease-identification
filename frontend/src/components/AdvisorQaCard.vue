@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
 import { useTreatmentStore } from '@/stores/treatment'
+import { useLanguageStore } from '@/stores/language'
 
 const treatmentStore = useTreatmentStore()
+const languageStore = useLanguageStore()
 
 // State for voice dictation
 const isListening = ref(false)
@@ -18,7 +20,7 @@ if (SpeechRecognition) {
 
   recognition.onstart = () => {
     isListening.value = true
-    voiceTranscript.value = 'Listening... Speak your crop conditions.'
+    voiceTranscript.value = languageStore.t('listening_crop')
   }
 
   recognition.onresult = (event: any) => {
@@ -39,7 +41,7 @@ if (SpeechRecognition) {
 
   recognition.onerror = () => {
     isListening.value = false
-    voiceTranscript.value = 'Could not hear you. Tap to try again.'
+    voiceTranscript.value = languageStore.t('could_not_hear')
   }
 
   recognition.onend = () => {
@@ -56,8 +58,48 @@ const toggleVoice = () => {
   if (isListening.value) {
     recognition.stop()
   } else {
+    const LANG_MAP: Record<string, string> = {
+      EN: 'en-US',
+      HI: 'hi-IN',
+      BN: 'bn-IN',
+      TA: 'ta-IN',
+      TE: 'te-IN',
+      KN: 'kn-IN',
+      MR: 'mr-IN',
+      GU: 'gu-IN',
+      PA: 'pa-IN',
+      ML: 'ml-IN',
+      OR: 'or-IN',
+    }
+    const langCode = languageStore.currentLanguage[1]
+    recognition.lang = LANG_MAP[langCode] || 'en-US'
     recognition.start()
   }
+}
+
+const getOptionTranslation = (opt: string) => {
+  const mapping: Record<string, string> = {
+    'Seedling': 'opt_seedling',
+    'Vegetative': 'opt_vegetative',
+    'Flowering': 'opt_flowering',
+    'Fruiting': 'opt_fruiting',
+    'Few leaves': 'opt_few_leaves',
+    '~25% plant': 'opt_25_plant',
+    '50%+ plant': 'opt_50_plant',
+    'Whole field': 'opt_whole_field',
+    'Drip': 'opt_drip',
+    'Flood': 'opt_flood',
+    'Sprinkler': 'opt_sprinkler',
+    'Rainfed': 'opt_rainfed',
+    'Yes, chemical': 'opt_chemical',
+    'Organic only': 'opt_organic',
+    'Limited access': 'opt_limited',
+    'Hot & dry': 'opt_hot_dry',
+    'Warm & humid': 'opt_warm_humid',
+    'Cool & wet': 'opt_cool_wet'
+  }
+  const key = mapping[opt] || opt
+  return languageStore.t(key)
 }
 
 const emit = defineEmits(['generate'])
@@ -76,14 +118,14 @@ onBeforeUnmount(() => {
 <template>
   <div class="card flex flex-col p-5 bg-[#070c19]/70 border border-green-950/45 rounded-3xl shadow-sm transition-all duration-300 hover:border-green-900/35">
     <div class="card-label text-[10px] font-bold tracking-widest text-slate-400 mb-3.5 uppercase">
-      Adaptive Q&A — Tell us your situation
+      {{ languageStore.t('adaptive_qa') }}
     </div>
 
     <!-- Question 1 -->
     <div class="q-item mb-4.5">
       <div class="q-text text-sm font-bold text-white mb-2.5 flex items-center gap-2">
         <span class="q-num w-5 h-5 rounded-full bg-green-950/20 text-green-400 text-[10px] font-extrabold flex items-center justify-center border border-green-900/35 shrink-0">1</span>
-        What is your crop growth stage?
+        {{ languageStore.t('q1_title') }}
       </div>
       <div class="opts flex flex-wrap gap-2 pl-7 select-none">
         <button 
@@ -96,7 +138,7 @@ onBeforeUnmount(() => {
             ? 'bg-green-600 border-green-600 text-white shadow-2xs'
             : 'bg-[#0d1527] border-green-950/40 text-slate-400 hover:text-slate-200 hover:bg-green-950/15'"
         >
-          {{ opt }}
+          {{ getOptionTranslation(opt) }}
         </button>
       </div>
     </div>
@@ -105,7 +147,7 @@ onBeforeUnmount(() => {
     <div class="q-item mb-4.5">
       <div class="q-text text-sm font-bold text-white mb-2.5 flex items-center gap-2">
         <span class="q-num w-5 h-5 rounded-full bg-green-950/20 text-green-400 text-[10px] font-extrabold flex items-center justify-center border border-green-900/35 shrink-0">2</span>
-        How severe is the spread?
+        {{ languageStore.t('q2_title') }}
       </div>
       <div class="opts flex flex-wrap gap-2 pl-7 select-none">
         <button 
@@ -118,7 +160,7 @@ onBeforeUnmount(() => {
             ? 'bg-green-600 border-green-600 text-white shadow-2xs'
             : 'bg-[#0d1527] border-green-950/40 text-slate-400 hover:text-slate-200 hover:bg-green-950/15'"
         >
-          {{ opt }}
+          {{ getOptionTranslation(opt) }}
         </button>
       </div>
     </div>
@@ -127,7 +169,7 @@ onBeforeUnmount(() => {
     <div class="q-item mb-4.5">
       <div class="q-text text-sm font-bold text-white mb-2.5 flex items-center gap-2">
         <span class="q-num w-5 h-5 rounded-full bg-green-950/20 text-green-400 text-[10px] font-extrabold flex items-center justify-center border border-green-900/35 shrink-0">3</span>
-        What irrigation method do you use?
+        {{ languageStore.t('q3_title') }}
       </div>
       <div class="opts flex flex-wrap gap-2 pl-7 select-none">
         <button 
@@ -140,7 +182,7 @@ onBeforeUnmount(() => {
             ? 'bg-green-600 border-green-600 text-white shadow-2xs'
             : 'bg-[#0d1527] border-green-950/40 text-slate-400 hover:text-slate-200 hover:bg-green-950/15'"
         >
-          {{ opt }}
+          {{ getOptionTranslation(opt) }}
         </button>
       </div>
     </div>
@@ -149,7 +191,7 @@ onBeforeUnmount(() => {
     <div class="q-item mb-4.5">
       <div class="q-text text-sm font-bold text-white mb-2.5 flex items-center gap-2">
         <span class="q-num w-5 h-5 rounded-full bg-green-950/20 text-green-400 text-[10px] font-extrabold flex items-center justify-center border border-green-900/35 shrink-0">4</span>
-        Access to fungicides?
+        {{ languageStore.t('q4_title') }}
       </div>
       <div class="opts flex flex-wrap gap-2 pl-7 select-none">
         <button 
@@ -162,7 +204,7 @@ onBeforeUnmount(() => {
             ? 'bg-green-600 border-green-600 text-white shadow-2xs'
             : 'bg-[#0d1527] border-green-950/40 text-slate-400 hover:text-slate-200 hover:bg-green-950/15'"
         >
-          {{ opt }}
+          {{ getOptionTranslation(opt) }}
         </button>
       </div>
     </div>
@@ -171,7 +213,7 @@ onBeforeUnmount(() => {
     <div class="q-item mb-5">
       <div class="q-text text-sm font-bold text-white mb-2.5 flex items-center gap-2">
         <span class="q-num w-5 h-5 rounded-full bg-green-950/20 text-green-400 text-[10px] font-extrabold flex items-center justify-center border border-green-900/35 shrink-0">5</span>
-        Recent weather?
+        {{ languageStore.t('q5_title') }}
       </div>
       <div class="opts flex flex-wrap gap-2 pl-7 select-none">
         <button 
@@ -184,7 +226,7 @@ onBeforeUnmount(() => {
             ? 'bg-green-600 border-green-600 text-white shadow-2xs'
             : 'bg-[#0d1527] border-green-950/40 text-slate-400 hover:text-slate-200 hover:bg-green-950/15'"
         >
-          {{ opt }}
+          {{ getOptionTranslation(opt) }}
         </button>
       </div>
     </div>
@@ -206,7 +248,7 @@ onBeforeUnmount(() => {
         class="vm-text text-xs font-medium transition-colors"
         :class="isListening ? 'text-green-400 font-semibold' : 'text-slate-400'"
       >
-        {{ voiceTranscript || 'Or answer in your language by voice' }}
+        {{ voiceTranscript || languageStore.t('or_voice_answer') }}
       </span>
     </div>
 
@@ -217,7 +259,7 @@ onBeforeUnmount(() => {
       class="proceed-btn w-full mt-4 py-3 bg-green-600 hover:bg-green-500 text-white border-0 font-bold rounded-2xl text-sm transition-all shadow-md shadow-green-900/10 cursor-pointer flex items-center justify-center gap-2 focus:outline-none"
     >
       <i class="ti ti-sparkles text-sm" aria-hidden="true"></i> 
-      Generate My Treatment Plan
+      {{ languageStore.t('generate_treatment_plan') }}
     </button>
   </div>
 </template>
