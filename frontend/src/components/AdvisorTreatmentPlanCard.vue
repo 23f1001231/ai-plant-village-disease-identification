@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { useTreatmentStore } from '@/stores/treatment'
-import { useLanguageStore } from '@/stores/language'
 
 const treatmentStore = useTreatmentStore()
-const languageStore = useLanguageStore()
 </script>
 
 <template>
   <div class="card flex flex-col p-5 bg-[#070c19]/70 border border-green-950/45 rounded-3xl shadow-sm transition-all duration-300 hover:border-green-900/35 mb-4.5">
     <div class="card-label text-[10px] font-bold tracking-widest text-slate-400 mb-4 uppercase">
-      {{ languageStore.t('personalized_plan') }}
+      Personalized Treatment Plan
     </div>
 
     <!-- Iterate over treatment sections (Immediate, Weekly, Prevention) -->

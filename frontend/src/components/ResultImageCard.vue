@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useDiagnosisStore } from '@/stores/diagnosis'
-import { useLanguageStore } from '@/stores/language'
 
 const diagnosisStore = useDiagnosisStore()
-const languageStore = useLanguageStore()
 const activeTab = ref<'original' | 'gradcam' | 'overlay'>('overlay')
 
 const setTab = (tab: 'original' | 'gradcam' | 'overlay') => {
@@ -15,7 +13,7 @@ const setTab = (tab: 'original' | 'gradcam' | 'overlay') => {
 <template>
   <div class="card flex flex-col p-5 bg-[#070c19]/70 border border-green-950/45 rounded-3xl shadow-sm transition-all duration-300 hover:border-green-900/35">
     <div class="card-label text-[10px] font-bold tracking-widest text-slate-400 mb-3.5 uppercase">
-      {{ languageStore.t('uploaded_leaf_view') }}
+      Uploaded Image + Grad-CAM Overlay
     </div>
     
     <!-- Image Display Wrapper -->

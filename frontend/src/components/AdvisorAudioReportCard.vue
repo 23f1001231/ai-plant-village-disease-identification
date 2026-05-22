@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useLanguageStore } from '@/stores/language'
-
-const languageStore = useLanguageStore()
 
 const isPlaying = ref(false)
 const selectedLanguage = ref<'MR' | 'HI' | 'EN'>('HI') // Default to Hindi audio
@@ -12,16 +9,16 @@ const togglePlay = () => {
   isPlaying.value = !isPlaying.value
 }
 
+const audioTitle = computed(() => {
+  if (selectedLanguage.value === 'MR') return 'Full treatment — Marathi audio'
+  if (selectedLanguage.value === 'HI') return 'Full treatment — Hindi audio'
+  return 'Full treatment — English audio'
+})
+
 const languageLabel = computed(() => {
   if (selectedLanguage.value === 'MR') return 'मराठी'
   if (selectedLanguage.value === 'HI') return 'हिन्दी'
   return 'English'
-})
-
-const audioTitle = computed(() => {
-  const langName = languageLabel.value
-  const pattern = languageStore.t('full_treatment_audio')
-  return pattern.replace('{lang}', langName)
 })
 
 const selectLang = (lang: 'MR' | 'HI' | 'EN') => {
@@ -39,7 +36,7 @@ const triggerDownload = () => {
 <template>
   <div class="card flex flex-col p-5 bg-[#070c19]/70 border border-green-950/45 rounded-3xl shadow-sm transition-all duration-300 hover:border-green-900/35">
     <div class="card-label text-[10px] font-bold tracking-widest text-slate-400 mb-3.5 uppercase">
-      {{ languageStore.t('listen_treatment_plan') }}
+      Listen to Treatment Plan
     </div>
 
     <!-- Audio Player widget -->
@@ -124,7 +121,7 @@ const triggerDownload = () => {
       class="w-full mt-3 py-2.5 bg-[#0e172a] hover:bg-green-950/25 text-green-450 border border-green-950/60 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 focus:outline-none shadow-xs"
     >
       <i class="ti ti-download text-xs" aria-hidden="true"></i> 
-      {{ languageStore.t('download_pdf_report') }}
+      Download PDF report
     </button>
   </div>
 </template>

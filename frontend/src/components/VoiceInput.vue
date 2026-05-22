@@ -20,7 +20,7 @@ const LANG_MAP: Record<string, string> = {
 
 const isRecording = ref(false)
 const transcript = ref('')
-const voiceSubText = ref(languageStore.t('tap_describe'))
+const voiceSubText = ref('Tap to describe your plant issue in your language')
 
 const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 const isSupported = ref(!!SpeechRecognition)
@@ -35,7 +35,7 @@ if (isSupported.value && SpeechRecognition) {
   recognition.onstart = () => {
     isRecording.value = true
     transcript.value = ''
-    voiceSubText.value = languageStore.t('listening_speak')
+    voiceSubText.value = 'Listening... Speak now.'
   }
 
   recognition.onresult = (event: any) => {
@@ -48,11 +48,11 @@ if (isSupported.value && SpeechRecognition) {
     console.error('Speech recognition error:', event.error)
     isRecording.value = false
     if (event.error === 'no-speech') {
-      voiceSubText.value = languageStore.t('no_speech')
+      voiceSubText.value = 'No speech detected. Tap to try again.'
     } else if (event.error === 'not-allowed') {
-      voiceSubText.value = languageStore.t('mic_denied')
+      voiceSubText.value = 'Microphone permission denied. Please allow microphone access.'
     } else {
-      voiceSubText.value = languageStore.t('could_not_hear')
+      voiceSubText.value = 'Could not hear you. Tap to try again.'
     }
   }
 
@@ -63,7 +63,7 @@ if (isSupported.value && SpeechRecognition) {
 
 const toggleVoice = () => {
   if (!isSupported.value) {
-    voiceSubText.value = languageStore.t('speech_not_supported')
+    voiceSubText.value = 'Speech recognition is not supported in this browser. Please try Chrome, Safari, or Edge.'
     return
   }
 
@@ -83,7 +83,7 @@ const toggleVoice = () => {
 // Reset transcript explanation when language changes
 watch(() => languageStore.currentLanguage, () => {
   transcript.value = ''
-  voiceSubText.value = languageStore.t('tap_describe')
+  voiceSubText.value = 'Tap to describe your plant issue in your language'
 })
 
 // Bridge global onclick call with Vue methods for compatibility with external triggers
@@ -134,7 +134,7 @@ onBeforeUnmount(() => {
 
         <!-- Voice Text Information -->
         <div class="voice-text space-y-1">
-          <div class="voice-title text-sm font-bold text-white tracking-wide">{{ languageStore.t('voice_input') }}</div>
+          <div class="voice-title text-sm font-bold text-white tracking-wide">Voice Input</div>
           <div 
             class="voice-sub text-xs transition-colors duration-250 font-medium" 
             id="voiceSub"

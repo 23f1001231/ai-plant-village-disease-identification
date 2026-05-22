@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { useLanguageStore } from '@/stores/language'
 import ResultImageCard from '@/components/ResultImageCard.vue'
 import DiseaseDetailsCard from '@/components/DiseaseDetailsCard.vue'
 import ExplainableAiCard from '@/components/ExplainableAiCard.vue'
 import DiseaseAboutCard from '@/components/DiseaseAboutCard.vue'
 
 const router = useRouter()
-const languageStore = useLanguageStore()
 
 // Reactive Toast State
 const toastMessage = ref<string | null>(null)
@@ -27,7 +25,7 @@ const goBack = () => {
 }
 
 const handleExport = () => {
-  showToast(languageStore.t('preparing_report'))
+  showToast('Preparing report... Opening print dialog.')
   setTimeout(() => {
     window.print()
   }, 400)
@@ -43,7 +41,7 @@ const handleShare = async () => {
   if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
     try {
       await navigator.share(shareData)
-      showToast(languageStore.t('shared_success'))
+      showToast('Successfully shared report!')
     } catch (err) {
       console.error('Error sharing:', err)
     }
@@ -51,9 +49,9 @@ const handleShare = async () => {
     // Fallback: Copy link to clipboard
     try {
       await navigator.clipboard.writeText(window.location.href)
-      showToast(languageStore.t('copied_clipboard'))
+      showToast('Result link copied to clipboard!')
     } catch (err) {
-      showToast(languageStore.t('copy_failed'))
+      showToast('Could not copy link to clipboard.')
       console.error(err)
     }
   }
@@ -75,7 +73,7 @@ onBeforeUnmount(() => {
           class="back-btn flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-green-400 bg-transparent border-0 cursor-pointer transition-colors focus:outline-none"
         >
           <i class="ti ti-arrow-left text-sm" aria-hidden="true"></i> 
-          {{ languageStore.t('back') }}
+          Back
         </button>
         
         <!-- Divider -->
@@ -87,7 +85,7 @@ onBeforeUnmount(() => {
             <i class="ti ti-leaf text-white text-base" aria-hidden="true"></i>
           </div>
           <div class="logo-text text-sm font-extrabold text-white tracking-wide uppercase">
-            {{ languageStore.t('diagnosis_result') }}
+            Diagnosis Result
           </div>
         </div>
       </div>
@@ -99,14 +97,14 @@ onBeforeUnmount(() => {
           class="flex items-center gap-1.5 px-3.5 py-2 bg-[#0e172a] hover:bg-green-950/25 text-green-450 border border-green-950/60 rounded-xl text-xs font-bold transition-all cursor-pointer focus:outline-none shadow-xs"
         >
           <i class="ti ti-download text-xs" aria-hidden="true"></i>
-          {{ languageStore.t('export') }}
+          Export
         </button>
         <button 
           @click="handleShare"
           class="flex items-center gap-1.5 px-3.5 py-2 bg-[#0e172a] hover:bg-green-950/25 text-green-450 border border-green-950/60 rounded-xl text-xs font-bold transition-all cursor-pointer focus:outline-none shadow-xs"
         >
           <i class="ti ti-share text-xs" aria-hidden="true"></i>
-          {{ languageStore.t('share') }}
+          Share
         </button>
       </div>
     </div>
