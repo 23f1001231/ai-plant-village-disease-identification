@@ -10,23 +10,16 @@ const languageStore = useLanguageStore()
 
 // State for interactive audio player
 const isPlaying = ref(false)
-const progressSec = ref(16) // Start at 16s mock progress like in user's image
-const durationSec = 45
-let audioTimer: any = null
+const isBuffering = ref(false)
+const progressSec = ref(0)
+const durationSec = ref(45)
+
+let audio: HTMLAudioElement | null = null
 
 const audioLabel = computed(() => {
-  const langName = languageStore.currentLanguage[0]
-  // Provide localized language names for the listen label
-  if (langName === 'हिन्दी') return 'Listen in Hindi'
-  if (langName === 'বাংলা') return 'Listen in Bengali'
-  if (langName === 'தமிழ்') return 'Listen in Tamil'
-  if (langName === 'తెలుగు') return 'Listen in Telugu'
-  if (langName === 'ಕನ್ನಡ') return 'Listen in Kannada'
-  if (langName === 'मराठी') return 'Listen in Marathi'
-  if (langName === 'ગુજરાતી') return 'Listen in Gujarati'
-  if (langName === 'ਪੰਜਾਬੀ') return 'Listen in Punjabi'
-  if (langName === 'മലയാളം') return 'Listen in Malayalam'
-  if (langName === 'ଓଡ଼िଆ') return 'Listen in Odia'
+  const langCode = languageStore.currentLanguage[1]
+  if (langCode === 'HI') return 'हिंदी में सुनें'
+  if (langCode === 'MR') return 'मराठीत ऐका'
   return 'Listen in English'
 })
 
@@ -36,45 +29,115 @@ const formattedTime = computed(() => {
     const secs = sec % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
-  return `${format(progressSec.value)} / ${format(durationSec)}`
+  return `${format(progressSec.value)} / ${format(durationSec.value)}`
 })
 
 const progressPercent = computed(() => {
-  return (progressSec.value / durationSec) * 100
+  return (progressSec.value / (durationSec.value || 1)) * 100
 })
 
 const toggleAudio = () => {
   if (isPlaying.value) {
-    clearInterval(audioTimer)
+    if (audio) {
+      audio.pause()
+    }
     isPlaying.value = false
+    isBuffering.value = false
   } else {
-    isPlaying.value = true
-    audioTimer = setInterval(() => {
-      if (progressSec.value >= durationSec) {
+    if (!audio) {
+      const apiBase = (window as any).VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+      const textToRead = diagnosisStore.currentDisease.about
+      const langCode = languageStore.currentLanguage[1].toLowerCase()
+      const url = `${apiBase}/api/v1/voice/tts?text=${encodeURIComponent(textToRead)}&language=${langCode}`
+      
+      isBuffering.value = true
+      audio = new Audio(url)
+      
+      audio.addEventListener('loadstart', () => {
+        isBuffering.value = true
+      })
+      
+      audio.addEventListener('waiting', () => {
+        isBuffering.value = true
+      })
+      
+      audio.addEventListener('playing', () => {
+        isBuffering.value = false
+      })
+      
+      audio.addEventListener('canplay', () => {
+        isBuffering.value = false
+      })
+      
+      audio.addEventListener('loadedmetadata', () => {
+         if (audio && isFinite(audio.duration)) {
+          durationSec.value = Math.round(audio.duration)
+        }
+        isBuffering.value = false
+      })
+      
+      audio.addEventListener('timeupdate', () => {
+         if (audio) {
+          progressSec.value = Math.round(audio.currentTime)
+        }
+      })
+      
+      audio.addEventListener('ended', () => {
+        isPlaying.value = false
+        isBuffering.value = false
         progressSec.value = 0
-      } else {
-        progressSec.value++
-      }
-    }, 1000)
+      })
+      
+      audio.addEventListener('error', (e) => {
+        console.error('Audio playback error:', e)
+        isPlaying.value = false
+        isBuffering.value = false
+      })
+    }
+    
+    // Explicitly set buffering during initial connection handshake
+    isBuffering.value = true
+    
+    audio.play().then(() => {
+      isPlaying.value = true
+      isBuffering.value = false
+    }).catch(err => {
+      console.error('Playback failed:', err)
+      isPlaying.value = false
+      isBuffering.value = false
+    })
   }
+}
+
+const stopAudio = () => {
+  if (audio) {
+    audio.pause()
+    audio = null
+  }
+  isPlaying.value = false
+  isBuffering.value = false
+  progressSec.value = 0
 }
 
 // Reset audio when language changes
 watch(() => languageStore.currentLanguage, () => {
-  clearInterval(audioTimer)
-  isPlaying.value = false
-  progressSec.value = 0
+  stopAudio()
+})
+
+// Reset audio when diagnosed disease changes
+watch(() => diagnosisStore.currentDisease, () => {
+  stopAudio()
 })
 
 onBeforeUnmount(() => {
-  clearInterval(audioTimer)
+  stopAudio()
 })
 </script>
 
 <template>
   <div class="card flex flex-col p-5 bg-[#070c19]/70 border border-green-950/45 rounded-3xl shadow-sm transition-all duration-300 hover:border-green-900/35">
     <div class="card-label text-[10px] font-bold tracking-widest text-slate-400 mb-3 uppercase">
-      Disease Identified
+      {{ languageStore.t('disease_identified') }}
     </div>
 
     <!-- Disease Information -->
@@ -110,7 +173,7 @@ onBeforeUnmount(() => {
 
     <!-- Severity Badge -->
     <div class="severity-row flex items-center gap-2 mb-5 py-2.5 px-3 bg-green-950/10 rounded-2xl border border-green-950/30">
-      <span class="text-xs text-slate-400 font-bold">Severity:</span>
+      <span class="text-xs text-slate-400 font-bold">{{ languageStore.t('severity') }}:</span>
       <span class="severity-badge flex items-center gap-1 px-3 py-1 bg-amber-500/10 border border-amber-500/25 rounded-full text-xs text-amber-400 font-extrabold shadow-2xs">
         <i class="ti ti-alert-triangle text-xs" aria-hidden="true"></i> 
         {{ diagnosisStore.currentDisease.severity }}
@@ -124,7 +187,7 @@ onBeforeUnmount(() => {
       class="flex items-center justify-center gap-2 w-full py-3 mb-5 bg-green-600 hover:bg-green-500 text-white border-0 font-bold rounded-2xl text-xs transition-all shadow-md shadow-green-900/10 cursor-pointer focus:outline-none select-none"
     >
       <i class="ti ti-sparkles text-xs" aria-hidden="true"></i>
-      Consult Treatment Advisor
+      {{ languageStore.t('consult_advisor') }}
     </button>
 
     <!-- Audio Player widget -->
@@ -138,9 +201,17 @@ onBeforeUnmount(() => {
       <button 
         @click="toggleAudio"
         class="play-btn w-9 h-9 rounded-full bg-green-600 hover:bg-green-500 text-white border-0 flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md shadow-green-900/20"
-        :aria-label="isPlaying ? 'Pause audio explanation' : 'Play audio explanation'"
+        :class="{ 'opacity-90 bg-emerald-700': isBuffering }"
+        :aria-label="isBuffering ? 'Generating audio' : isPlaying ? 'Pause audio explanation' : 'Play audio explanation'"
+        :disabled="isBuffering"
       >
         <i 
+          v-if="isBuffering"
+          class="ti ti-loader text-white text-base leading-none animate-spin"
+          aria-hidden="true"
+        ></i>
+        <i 
+          v-else
           class="ti text-white text-base leading-none" 
           :class="isPlaying ? 'ti-player-pause' : 'ti-player-play'"
           aria-hidden="true"
@@ -149,11 +220,11 @@ onBeforeUnmount(() => {
 
       <!-- Audio Details -->
       <div class="audio-info min-w-[70px]">
-        <div class="audio-title text-[11px] font-extrabold text-white leading-tight">
-          {{ audioLabel }}
+        <div class="audio-title text-[11px] font-extrabold text-white leading-tight truncate" :class="{ 'text-emerald-400 italic': isBuffering }">
+          {{ isBuffering ? 'Generating speech... (OpenAI)' : audioLabel }}
         </div>
         <div class="audio-dur text-[10px] text-slate-500 font-semibold mt-0.5">
-          ~45 sec
+          {{ isBuffering ? 'Processing' : '~45 sec' }}
         </div>
       </div>
 
@@ -173,4 +244,17 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

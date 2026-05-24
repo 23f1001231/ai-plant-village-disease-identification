@@ -47,7 +47,9 @@ const setTab = (tab: 'original' | 'gradcam' | 'overlay') => {
 
       <!-- User Uploaded Image -->
       <div v-else class="w-full h-full relative flex items-center justify-center bg-black">
+        <!-- Display Original image if tab is original or if we are falling back to CSS mock overlay -->
         <img 
+          v-if="activeTab === 'original' || (activeTab === 'overlay' && !diagnosisStore.gradcamOverlay) || (activeTab === 'gradcam' && !diagnosisStore.gradcamHeatmap)"
           :src="diagnosisStore.uploadedImage" 
           alt="Analyzed Leaf"
           class="w-full h-full object-cover transition-all duration-300"
@@ -56,10 +58,27 @@ const setTab = (tab: 'original' | 'gradcam' | 'overlay') => {
             filter: activeTab === 'gradcam' ? 'brightness(0)' : 'none'
           }"
         />
-        <!-- Gradient Heatmap Overlay -->
+        
+        <!-- Display live base64 Grad-CAM overlay if available -->
+        <img
+          v-else-if="activeTab === 'overlay' && diagnosisStore.gradcamOverlay"
+          :src="diagnosisStore.gradcamOverlay"
+          alt="Grad-CAM Overlay"
+          class="w-full h-full object-cover transition-all duration-300"
+        />
+
+        <!-- Display live base64 Grad-CAM heatmap if available -->
+        <img
+          v-else-if="activeTab === 'gradcam' && diagnosisStore.gradcamHeatmap"
+          :src="diagnosisStore.gradcamHeatmap"
+          alt="Grad-CAM Heatmap"
+          class="w-full h-full object-cover transition-all duration-300"
+        />
+
+        <!-- Fallback CSS Gradient Heatmap Overlay (if live images are missing and tab is not original) -->
         <div 
           class="heatmap-overlay"
-          v-show="activeTab !== 'original'"
+          v-if="activeTab !== 'original' && !diagnosisStore.gradcamOverlay"
         ></div>
       </div>
     </div>

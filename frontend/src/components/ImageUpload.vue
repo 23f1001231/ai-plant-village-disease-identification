@@ -2,11 +2,13 @@
 import { ref, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDiagnosisStore } from '@/stores/diagnosis'
+import { useLanguageStore } from '@/stores/language'
 import PhotoUpIcon from './icons/PhotoUpIcon.vue'
 import UploadIcon from './icons/UploadIcon.vue'
 
 const router = useRouter()
 const diagnosisStore = useDiagnosisStore()
+const languageStore = useLanguageStore()
 
 // Allowed file settings based on the image
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -21,6 +23,7 @@ const errorMessage = ref<string | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const triggerFileInput = () => {
+  if (diagnosisStore.isAnalyzing) return
   fileInput.value?.click()
 }
 
@@ -36,6 +39,7 @@ const handleFileChange = (event: Event) => {
 
 const handleDragOver = (event: DragEvent) => {
   event.preventDefault()
+  if (diagnosisStore.isAnalyzing) return
   isDragging.value = true
 }
 
@@ -46,6 +50,7 @@ const handleDragLeave = () => {
 const handleDrop = (event: DragEvent) => {
   event.preventDefault()
   isDragging.value = false
+  if (diagnosisStore.isAnalyzing) return
   if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
     const file = event.dataTransfer.files[0]
     if (file) {
@@ -76,6 +81,7 @@ const processFile = (file: File) => {
 }
 
 const clearImage = () => {
+  if (diagnosisStore.isAnalyzing) return
   selectedFile.value = null
   errorMessage.value = null
   if (previewUrl.value) {
@@ -87,10 +93,30 @@ const clearImage = () => {
   }
 }
 
-const analyzeLeaf = () => {
-  if (previewUrl.value) {
+const analyzeLeaf = async () => {
+  if (!selectedFile.value || !previewUrl.value) return
+  
+  errorMessage.value = null
+  
+  // Convert selectedFile to base64 to prevent Object URL revocation on unmount
+  try {
+    const base64Image = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(selectedFile.value!)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (err) => reject(err)
+    })
+    diagnosisStore.setUploadedImage(base64Image)
+  } catch (err) {
+    console.error('Failed to convert file to base64:', err)
     diagnosisStore.setUploadedImage(previewUrl.value)
+  }
+  
+  try {
+    await diagnosisStore.diagnoseLeaf(selectedFile.value, languageStore.currentLanguage[1])
     router.push('/result')
+  } catch (err: any) {
+    errorMessage.value = err.message || 'An error occurred during plant leaf analysis.'
   }
 }
 
@@ -148,10 +174,10 @@ onBeforeUnmount(() => {
         <!-- Info/Instructions -->
         <div class="space-y-1">
           <h3 class="upload-title text-base font-bold text-white">
-            Drop your leaf image here
+            {{ languageStore.t('drop_leaf') }}
           </h3>
           <p class="upload-sub text-sm text-slate-400 font-medium">
-            or click to browse from your device
+            {{ languageStore.t('or_click_browse') }}
           </p>
         </div>
 
@@ -177,7 +203,7 @@ onBeforeUnmount(() => {
           class="btn-upload flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-2xl shadow-md shadow-green-900/20 transition-all duration-200 cursor-pointer text-sm border-0"
         >
           <UploadIcon class="w-4 h-4 text-white" />
-          Choose Image
+          {{ languageStore.t('choose_image') }}
         </button>
       </div>
 
@@ -217,16 +243,22 @@ onBeforeUnmount(() => {
           <button
             type="button"
             @click="clearImage"
-            class="flex-1 py-2.5 px-4 bg-[#0d1527] hover:bg-green-950/20 text-green-400 font-semibold rounded-2xl text-sm transition-all cursor-pointer border border-green-900/30"
+            :disabled="diagnosisStore.isAnalyzing"
+            class="flex-1 py-2.5 px-4 bg-[#0d1527] hover:bg-green-950/20 text-green-450 font-semibold rounded-2xl text-sm transition-all cursor-pointer border border-green-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Change
+            {{ languageStore.t('change') }}
           </button>
           <button
             type="button"
             @click="analyzeLeaf"
-            class="flex-1 py-2.5 px-4 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-2xl text-sm transition-all shadow-md shadow-green-900/20 cursor-pointer border-0"
+            :disabled="diagnosisStore.isAnalyzing"
+            class="flex-1 py-2.5 px-4 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-2xl text-sm transition-all shadow-md shadow-green-900/20 cursor-pointer border-0 disabled:opacity-80 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Analyze Leaf
+            <svg v-if="diagnosisStore.isAnalyzing" class="animate-spin h-4 w-4 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {{ diagnosisStore.isAnalyzing ? languageStore.t('analyzing_dots') : languageStore.t('analyze_leaf') }}
           </button>
         </div>
       </div>

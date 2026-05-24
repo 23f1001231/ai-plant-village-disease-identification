@@ -50,8 +50,8 @@ onBeforeUnmount(() => {
           <LeafIcon />
         </div>
         <div class="logo-text">
-          <div class="logo-heading text-lg font-bold text-white leading-tight">PlantVillage AI</div>
-          <div class="logo-sub text-xs text-slate-400 font-medium">Disease Detection System</div>
+          <div class="logo-heading text-lg font-bold text-white leading-tight">{{ languageStore.t('title') }}</div>
+          <div class="logo-sub text-xs text-slate-400 font-medium">{{ languageStore.t('subtitle') }}</div>
         </div>
       </div>
     </RouterLink>

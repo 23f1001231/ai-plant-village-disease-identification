@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import ImageUpload from '@/components/ImageUpload.vue'
 import VoiceInput from '@/components/VoiceInput.vue';
+import { useLanguageStore } from '@/stores/language'
+
+const languageStore = useLanguageStore()
+const t = languageStore.t
 </script>
 
 <template>
@@ -10,17 +14,22 @@ import VoiceInput from '@/components/VoiceInput.vue';
       <!-- Tag Badge -->
       <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-950/30 border border-green-900/30 rounded-full text-xs font-extrabold uppercase tracking-widest text-green-400 shadow-2xs">
         <span class="w-1.5 h-1.5 rounded-full bg-green-450 animate-pulse"></span>
-        AI-Powered Diagnosis
+        {{ t('ai_powered') }}
       </span>
       
       <!-- Main Title -->
       <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight leading-tight">
-        Identify plant diseases <span class="text-transparent bg-clip-text bg-linear-to-r from-green-400 to-emerald-400">instantly</span>
+        <span v-if="languageStore.currentLanguage[1] === 'EN'">
+          Identify plant diseases <span class="text-transparent bg-clip-text bg-linear-to-r from-green-400 to-emerald-400">instantly</span>
+        </span>
+        <span v-else>
+          {{ t('identify_instantly') }}
+        </span>
       </h1>
       
       <!-- Subtitle description -->
       <p class="text-slate-400 md:text-base text-sm font-medium leading-relaxed max-w-lg mx-auto">
-        Upload a leaf photo or speak your query — get expert diagnosis in your language.
+        {{ t('upload_or_speak') }}
       </p>
     </div>
 
@@ -31,27 +40,27 @@ import VoiceInput from '@/components/VoiceInput.vue';
     <!-- Interactive Processing Pipeline Steps -->
     <div class="steps">
       <div class="step-card">
-        <div class="step-num">STEP 1 — VALIDATION</div>
-        <div class="step-title">Image checks</div>
+        <div class="step-num">{{ t('step1') }}</div>
+        <div class="step-title">{{ t('image_checks') }}</div>
         <div class="check-list">
-          <div class="check-item"><i class="ti ti-check" aria-hidden="true"></i> Leaf detection</div>
-          <div class="check-item"><i class="ti ti-check" aria-hidden="true"></i> Image quality score</div>
-          <div class="check-item"><i class="ti ti-check" aria-hidden="true"></i> Format (JPEG/PNG/WEBP)</div>
-          <div class="check-item"><i class="ti ti-check" aria-hidden="true"></i> File size limit</div>
+          <div class="check-item"><i class="ti ti-check" aria-hidden="true"></i> {{ t('leaf_detection') }}</div>
+          <div class="check-item"><i class="ti ti-check" aria-hidden="true"></i> {{ t('quality_score') }}</div>
+          <div class="check-item"><i class="ti ti-check" aria-hidden="true"></i> {{ t('format_check') }}</div>
+          <div class="check-item"><i class="ti ti-check" aria-hidden="true"></i> {{ t('size_limit') }}</div>
         </div>
       </div>
       <div class="step-card">
-        <div class="step-num">STEP 2 — AI DIAGNOSIS</div>
-        <div class="step-title">Disease identification</div>
-        <div class="step-desc">Deep learning model classifies disease with Grad-CAM heatmap overlay showing affected regions</div>
+        <div class="step-num">{{ t('step2') }}</div>
+        <div class="step-title">{{ t('disease_id') }}</div>
+        <div class="step-desc">{{ t('deep_learning') }}</div>
       </div>
       <router-link to="/treatment" class="step-card group cursor-pointer text-inherit hover:no-underline">
-        <div class="step-num font-bold">STEP 3 — TREATMENT</div>
+        <div class="step-num font-bold">{{ t('step3') }}</div>
         <div class="step-title flex items-center justify-between">
-          <span>Hyperlocal guidance</span>
+          <span>{{ t('hyperlocal_guidance') }}</span>
           <i class="ti ti-arrow-right text-xs text-green-400 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-1" aria-hidden="true"></i>
         </div>
-        <div class="step-desc text-slate-400">Adaptive Q&amp;A determines local conditions, soil type, crop stage — then recommends actionable steps</div>
+        <div class="step-desc text-slate-400">{{ t('adaptive_qa_desc') }}</div>
       </router-link>
     </div>
   </main>

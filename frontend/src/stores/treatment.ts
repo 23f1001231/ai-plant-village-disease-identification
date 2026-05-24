@@ -51,8 +51,19 @@ export const useTreatmentStore = defineStore('treatment', () => {
     return '#ef4444'
   })
 
+  // Loading and error states
+  const isLoading = ref(false)
+  const error = ref<string | null>(null)
+  
+  // Custom API-generated plan
+  const backendPlan = ref<TreatmentGroup[] | null>(null)
+
   // Dynamic treatment plan generator
   const treatmentPlan = computed<TreatmentGroup[]>(() => {
+    if (backendPlan.value) {
+      return backendPlan.value
+    }
+
     const immediateSteps: TreatmentStep[] = []
     
     // Step 1: Physical removal based on severity
@@ -166,6 +177,98 @@ export const useTreatmentStore = defineStore('treatment', () => {
     ]
   })
 
+  const fetchTreatmentPlan = async (crop: string, diseaseName: string, language: string) => {
+    isLoading.value = true
+    error.value = null
+    
+    // Normalize language and fungicide access mapping to match API expectations
+    const langCode = language.toLowerCase()
+    
+    const localConditions = {
+      crop: crop,
+      disease_name: diseaseName,
+      language: langCode,
+      growth_stage: growthStage.value.toLowerCase(),
+      severity: severity.value.toLowerCase(),
+      irrigation: irrigation.value.toLowerCase(),
+      fungicide_access: fungicides.value.toLowerCase(),
+      weather: weather.value.toLowerCase()
+    }
+    
+    try {
+      const apiBase = (window as any).VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+      const res = await fetch(`${apiBase}/api/v1/treatment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(localConditions)
+      })
+      
+      if (!res.ok) {
+        const errorText = await res.json().catch(() => ({}))
+        throw new Error(errorText.detail || 'Failed to fetch treatment plan from backend.')
+      }
+      
+      const data = await res.json()
+      
+      // Helper function to split action into title & description beautifully
+      const parseStep = (str: string, index: number) => {
+        const parts = str.split(/ - | — |: /)
+        if (parts.length > 1 && parts[0]) {
+          return {
+            id: index + 1,
+            title: parts[0].trim(),
+            description: parts.slice(1).join(' - ').trim()
+          }
+        }
+        const dotIndex = str.indexOf('.')
+        if (dotIndex > 10 && dotIndex < str.length - 10) {
+          return {
+            id: index + 1,
+            title: str.substring(0, dotIndex).trim(),
+            description: str.substring(dotIndex + 1).trim()
+          }
+        }
+        return {
+          id: index + 1,
+          title: str.length > 30 ? str.substring(0, 30) + '...' : str,
+          description: str
+        }
+      }
+      
+      backendPlan.value = [
+        {
+          name: 'Immediate actions',
+          icon: 'ti-urgent',
+          bg: '#FAECE7',
+          color: '#993C1D',
+          urgency: urgencyText.value,
+          steps: (data.immediate_actions || []).map((action: string, idx: number) => parseStep(action, idx))
+        },
+        {
+          name: 'This week',
+          icon: 'ti-calendar',
+          bg: '#FAEEDA',
+          color: '#854F0B',
+          steps: (data.this_week || []).map((action: string, idx: number) => parseStep(action, idx))
+        },
+        {
+          name: 'Prevention going forward',
+          icon: 'ti-shield-check',
+          bg: '#EAF3DE',
+          color: '#3B6D11',
+          steps: (data.prevention_measures || []).map((action: string, idx: number) => parseStep(action, idx))
+        }
+      ]
+    } catch (err: any) {
+      error.value = err.message || 'An error occurred while fetching the treatment plan.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     growthStage,
     severity,
@@ -180,6 +283,9 @@ export const useTreatmentStore = defineStore('treatment', () => {
     urgencyText,
     urgencyBg,
     urgencyColor,
-    treatmentPlan
+    treatmentPlan,
+    isLoading,
+    error,
+    fetchTreatmentPlan
   }
 })

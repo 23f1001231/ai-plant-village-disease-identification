@@ -4,86 +4,115 @@ import { useLanguageStore } from '@/stores/language'
 
 const languageStore = useLanguageStore()
 
-const LANG_MAP: Record<string, string> = {
-  EN: 'en-US',
-  HI: 'hi-IN',
-  BN: 'bn-IN',
-  TA: 'ta-IN',
-  TE: 'te-IN',
-  KN: 'kn-IN',
-  MR: 'mr-IN',
-  GU: 'gu-IN',
-  PA: 'pa-IN',
-  ML: 'ml-IN',
-  OR: 'or-IN',
-}
-
 const isRecording = ref(false)
+const isTranscribing = ref(false)
 const transcript = ref('')
-const voiceSubText = ref('Tap to describe your plant issue in your language')
+const voiceSubText = ref(languageStore.t('voice_tap_describe'))
 
-const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-const isSupported = ref(!!SpeechRecognition)
+let mediaRecorder: MediaRecorder | null = null
+let audioStream: MediaStream | null = null
+let audioChunks: Blob[] = []
 
-let recognition: any = null
+const startRecording = async () => {
+  try {
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    audioChunks = []
+    
+    // Check supported MIME type
+    let mimeType = 'audio/webm'
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'audio/ogg'
+    }
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'audio/mp4'
+    }
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = '' // fallback to browser default
+    }
 
-if (isSupported.value && SpeechRecognition) {
-  recognition = new SpeechRecognition()
-  recognition.continuous = false
-  recognition.interimResults = false
+    mediaRecorder = mimeType 
+      ? new MediaRecorder(audioStream, { mimeType }) 
+      : new MediaRecorder(audioStream)
 
-  recognition.onstart = () => {
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        audioChunks.push(event.data)
+      }
+    }
+
+    mediaRecorder.onstop = async () => {
+      isTranscribing.value = true
+      voiceSubText.value = languageStore.t('voice_transcribing')
+      
+      try {
+        const audioBlob = new Blob(audioChunks, { type: mediaRecorder?.mimeType || 'audio/webm' })
+        const apiBase = (window as any).VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+        const formData = new FormData()
+        
+        // Use proper extension based on MIME type
+        const extension = (mediaRecorder?.mimeType || '').includes('mp4') ? 'mp4' : 'webm'
+        formData.append('file', audioBlob, `audio.${extension}`)
+        formData.append('language', languageStore.currentLanguage[1].toLowerCase())
+        
+        const response = await fetch(`${apiBase}/api/v1/voice/stt`, {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (!response.ok) {
+          throw new Error('Transcription request failed')
+        }
+        
+        const data = await response.json()
+        const text = (data.text || '').trim()
+        if (text && !text.startsWith('[Transcription failed')) {
+          transcript.value = text
+          voiceSubText.value = `"${text}"`
+        } else {
+          voiceSubText.value = languageStore.t('voice_no_speech')
+        }
+      } catch (err) {
+        console.error('Transcription error:', err)
+        voiceSubText.value = languageStore.t('voice_failed')
+      } finally {
+        isTranscribing.value = false
+      }
+    }
+
+    // Start recording
+    mediaRecorder.start(250) // slice every 250ms
     isRecording.value = true
     transcript.value = ''
-    voiceSubText.value = 'Listening... Speak now.'
-  }
-
-  recognition.onresult = (event: any) => {
-    const result = event.results[0][0].transcript
-    transcript.value = result
-    voiceSubText.value = `"${result}"`
-  }
-
-  recognition.onerror = (event: any) => {
-    console.error('Speech recognition error:', event.error)
+    voiceSubText.value = languageStore.t('voice_listening')
+  } catch (err: any) {
+    console.error('Microphone access denied or error:', err)
     isRecording.value = false
-    if (event.error === 'no-speech') {
-      voiceSubText.value = 'No speech detected. Tap to try again.'
-    } else if (event.error === 'not-allowed') {
-      voiceSubText.value = 'Microphone permission denied. Please allow microphone access.'
-    } else {
-      voiceSubText.value = 'Could not hear you. Tap to try again.'
-    }
+    voiceSubText.value = languageStore.t('voice_mic_denied')
   }
+}
 
-  recognition.onend = () => {
-    isRecording.value = false
+const stopRecording = () => {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop()
   }
+  if (audioStream) {
+    audioStream.getTracks().forEach(track => track.stop())
+  }
+  isRecording.value = false
 }
 
 const toggleVoice = () => {
-  if (!isSupported.value) {
-    voiceSubText.value = 'Speech recognition is not supported in this browser. Please try Chrome, Safari, or Edge.'
-    return
-  }
-
   if (isRecording.value) {
-    recognition.stop()
+    stopRecording()
   } else {
-    const langCode = languageStore.currentLanguage[1]
-    recognition.lang = LANG_MAP[langCode] || 'en-US'
-    try {
-      recognition.start()
-    } catch (err) {
-      console.error(err)
-    }
+    startRecording()
   }
 }
 
 // Reset transcript explanation when language changes
 watch(() => languageStore.currentLanguage, () => {
   transcript.value = ''
-  voiceSubText.value = 'Tap to describe your plant issue in your language'
+  voiceSubText.value = languageStore.t('voice_tap_describe')
 })
 
 // Bridge global onclick call with Vue methods for compatibility with external triggers
@@ -92,9 +121,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  if (recognition && isRecording.value) {
-    recognition.stop()
-  }
+  stopRecording()
   if ((window as any).toggleVoice === toggleVoice) {
     delete (window as any).toggleVoice
   }
@@ -134,7 +161,7 @@ onBeforeUnmount(() => {
 
         <!-- Voice Text Information -->
         <div class="voice-text space-y-1">
-          <div class="voice-title text-sm font-bold text-white tracking-wide">Voice Input</div>
+          <div class="voice-title text-sm font-bold text-white tracking-wide">{{ languageStore.t('voice_input') }}</div>
           <div 
             class="voice-sub text-xs transition-colors duration-250 font-medium" 
             id="voiceSub"

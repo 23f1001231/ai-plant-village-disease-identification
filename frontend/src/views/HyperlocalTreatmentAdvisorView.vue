@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useDiagnosisStore } from '@/stores/diagnosis'
+import { useTreatmentStore } from '@/stores/treatment'
+import { useLanguageStore } from '@/stores/language'
 import AdvisorQaCard from '@/components/AdvisorQaCard.vue'
 import AdvisorTreatmentPlanCard from '@/components/AdvisorTreatmentPlanCard.vue'
 import AdvisorAudioReportCard from '@/components/AdvisorAudioReportCard.vue'
 
 const router = useRouter()
+const diagnosisStore = useDiagnosisStore()
+const treatmentStore = useTreatmentStore()
+const languageStore = useLanguageStore()
 
 // Reactive Toast State
 const toastMessage = ref<string | null>(null)
@@ -24,16 +30,35 @@ const goBack = () => {
   router.push('/result')
 }
 
-const handleGeneratePlan = () => {
-  showToast('Analyzing conditions... Plan updated successfully!')
+const handleGeneratePlan = async () => {
+  showToast(languageStore.t('analyzing'))
+  try {
+    const crop = diagnosisStore.currentDisease.cropEn || 'Tomato'
+    const disease = diagnosisStore.currentDisease.diseaseEn || 'Early Blight'
+    const language = languageStore.currentLanguage[1] || 'EN'
+    await treatmentStore.fetchTreatmentPlan(crop, disease, language)
+    showToast(languageStore.t('plan_updated'))
+  } catch (err: any) {
+    showToast(err.message || 'Failed to update treatment plan.')
+  }
 }
 
 const handleDownloadPdf = () => {
-  showToast('Preparing PDF... Opening print layout.')
+  showToast(languageStore.t('toast_pdf'))
   setTimeout(() => {
     window.print()
   }, 400)
 }
+
+onMounted(() => {
+  // Auto-trigger RAG plan compilation upon entering
+  handleGeneratePlan()
+})
+
+watch(() => languageStore.currentLanguage, () => {
+  handleGeneratePlan()
+})
+
 
 onBeforeUnmount(() => {
   if (toastTimer) clearTimeout(toastTimer)
@@ -58,10 +83,10 @@ onBeforeUnmount(() => {
         <!-- Titles -->
         <div>
           <h1 class="logo-text text-sm font-extrabold text-white tracking-wide uppercase leading-tight">
-            Hyperlocal Treatment Advisor
+            {{ languageStore.t('hyperlocal_advisor') }}
           </h1>
           <p class="text-[10px] text-slate-500 font-bold uppercase mt-0.5 tracking-wider">
-            Early Blight · Tomato
+            {{ diagnosisStore.currentDisease.name }} · {{ diagnosisStore.currentDisease.tags[1] || 'Tomato' }}
           </p>
         </div>
       </div>
@@ -69,7 +94,7 @@ onBeforeUnmount(() => {
       <!-- Location Badge -->
       <div class="flex items-center gap-1.5 px-3 py-1.5 bg-green-950/20 border border-green-900/35 rounded-full text-xs text-green-400 font-extrabold shadow-2xs">
         <i class="ti ti-map-pin text-xs text-green-450" aria-hidden="true"></i>
-        Maharashtra · Kharif Season
+        {{ languageStore.t('season_badge') }}
       </div>
     </div>
 

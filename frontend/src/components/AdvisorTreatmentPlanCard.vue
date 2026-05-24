@@ -1,13 +1,24 @@
 <script setup lang="ts">
 import { useTreatmentStore } from '@/stores/treatment'
+import { useLanguageStore } from '@/stores/language'
 
 const treatmentStore = useTreatmentStore()
+const languageStore = useLanguageStore()
 </script>
 
 <template>
-  <div class="card flex flex-col p-5 bg-[#070c19]/70 border border-green-950/45 rounded-3xl shadow-sm transition-all duration-300 hover:border-green-900/35 mb-4.5">
+  <div class="card relative flex flex-col p-5 bg-[#070c19]/70 border border-green-950/45 rounded-3xl shadow-sm transition-all duration-300 hover:border-green-900/35 mb-4.5">
+    <!-- Premium RAG Advisor Loading Overlay -->
+    <div 
+      v-if="treatmentStore.isLoading"
+      class="absolute inset-0 bg-[#050811]/70 backdrop-blur-xs rounded-3xl flex flex-col items-center justify-center gap-3 z-20 select-none"
+    >
+      <div class="w-8 h-8 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin"></div>
+      <p class="text-[10px] text-slate-400 font-extrabold tracking-wider uppercase animate-pulse">{{ languageStore.t('formulating_plan') }}</p>
+    </div>
+
     <div class="card-label text-[10px] font-bold tracking-widest text-slate-400 mb-4 uppercase">
-      Personalized Treatment Plan
+      {{ languageStore.t('personalized_plan') }}
     </div>
 
     <!-- Iterate over treatment sections (Immediate, Weekly, Prevention) -->
@@ -44,7 +55,7 @@ const treatmentStore = useTreatmentStore()
           ></i>
         </div>
         
-        <span>{{ section.name }}</span>
+        <span>{{ languageStore.t(section.name) }}</span>
 
         <!-- Urgency Badge -->
         <span 
@@ -56,7 +67,7 @@ const treatmentStore = useTreatmentStore()
             borderColor: treatmentStore.urgencyColor === '#993C1D' ? 'rgba(153, 60, 29, 0.25)' : 'rgba(239, 68, 68, 0.25)'
           }"
         >
-          {{ section.urgency }}
+          {{ languageStore.t(section.urgency) }}
         </span>
       </div>
 
