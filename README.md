@@ -32,7 +32,7 @@ VISION_MODEL_PATH=./models/plant_disease.pt
 CONFIDENCE_THRESHOLD=0.70
 ```
 # Download Vision Model
-- [Click here to download]("https://drive.google.com/file/d/1sNJPNS0WH2PKwxqobWEj3w0QdhOLz8_c/view?usp=sharing")
+- [Click here to download](https://drive.google.com/file/d/1sNJPNS0WH2PKwxqobWEj3w0QdhOLz8_c/view?usp=sharing)
 - Create `backend/models` directory 
 - Paste the downloaded model to the newly create `backend/models` directory 
 
